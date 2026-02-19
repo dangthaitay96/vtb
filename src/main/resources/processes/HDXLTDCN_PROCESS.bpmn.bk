@@ -63,9 +63,7 @@
       <bpmn:outgoing>Flow_16nspvd</bpmn:outgoing>
       <bpmn:outgoing>Flow_04x9ftg</bpmn:outgoing>
     </bpmn:task>
-    <bpmn:sequenceFlow id="Flow_1vkrj2t" sourceRef="Activity_0x8flfn" targetRef="Activity_1cfhhhn">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doc1Approved == true}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1vkrj2t" sourceRef="Activity_0x8flfn" targetRef="Activity_1cfhhhn" />
     <bpmn:sequenceFlow id="Flow_16nspvd" sourceRef="Activity_1cfhhhn" targetRef="Gateway_0wkf79c" />
     <bpmn:task id="Activity_0dss82j" name="Ra soát doc2">
       <bpmn:incoming>Flow_1om7fzp</bpmn:incoming>
@@ -103,24 +101,12 @@
       <bpmn:incoming>Flow_0ev8ufs</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_0ev8ufs" sourceRef="Gateway_0wkf79c" targetRef="Event_1hi5l8y" />
-    <bpmn:sequenceFlow id="Flow_1rl2nyo" sourceRef="Activity_0x8flfn" targetRef="Activity_1mym9md">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${doc1Approved == false}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_04x9ftg" sourceRef="Activity_1cfhhhn" targetRef="Activity_1mym9md">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" />
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1nd2wx8" sourceRef="Activity_0dss82j" targetRef="Activity_17u5n5h">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" />
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0l1l7m6" sourceRef="Activity_180tq9f" targetRef="Activity_17u5n5h">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" />
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0651o2l" sourceRef="Activity_0idvmsc" targetRef="Activity_0k0z6ve">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" />
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_17ddxdv" sourceRef="Activity_0f56i68" targetRef="Activity_0k0z6ve">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" />
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1rl2nyo" sourceRef="Activity_0x8flfn" targetRef="Activity_1mym9md" />
+    <bpmn:sequenceFlow id="Flow_04x9ftg" sourceRef="Activity_1cfhhhn" targetRef="Activity_1mym9md" />
+    <bpmn:sequenceFlow id="Flow_1nd2wx8" sourceRef="Activity_0dss82j" targetRef="Activity_17u5n5h" />
+    <bpmn:sequenceFlow id="Flow_0l1l7m6" sourceRef="Activity_180tq9f" targetRef="Activity_17u5n5h" />
+    <bpmn:sequenceFlow id="Flow_0651o2l" sourceRef="Activity_0idvmsc" targetRef="Activity_0k0z6ve" />
+    <bpmn:sequenceFlow id="Flow_17ddxdv" sourceRef="Activity_0f56i68" targetRef="Activity_0k0z6ve" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1c2389r">

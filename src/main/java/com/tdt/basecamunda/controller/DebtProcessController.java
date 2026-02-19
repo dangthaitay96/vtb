@@ -1,6 +1,7 @@
 package com.tdt.basecamunda.controller;
 
 import com.tdt.basecamunda.dto.StartProcessRequest;
+import com.tdt.basecamunda.dto.StartProcessResponse;
 import com.tdt.basecamunda.service.DebtProcessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,5 +29,10 @@ public class DebtProcessController {
                 "processInstanceId", processInstanceId,
                 "caseId", request.getCaseId()
         ));
+    }
+
+    @PostMapping("/start2")
+    public ResponseEntity<StartProcessResponse> start2(@RequestBody StartProcessRequest request) {
+        return ResponseEntity.ok(debtProcessService.startDebtProcess(request));
     }
 }

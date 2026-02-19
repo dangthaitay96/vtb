@@ -1,11 +1,14 @@
 package com.tdt.basecamunda.service;
 
 import com.tdt.basecamunda.dto.StartProcessRequest;
+import com.tdt.basecamunda.dto.StartProcessResponse;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -47,5 +50,52 @@ public class DebtProcessService {
         return instance.getProcessInstanceId();
     }
 
+    public StartProcessResponse startDebtProcess(StartProcessRequest request) {
+        String caseId = request.getCaseId();
 
+        List<Map<String, Object>> docs = new ArrayList<>();
+        docs.add(Map.of(
+                "docNo", "DOC1",
+                "docId", request.getDocuments().getDoc1Id(),
+                "childBusinessKey", caseId + "-DOC1"
+        ));
+        docs.add(Map.of(
+                "docNo", "DOC2",
+                "docId", request.getDocuments().getDoc2Id(),
+                "childBusinessKey", caseId + "-DOC2"
+        ));
+        docs.add(Map.of(
+                "docNo", "DOC3",
+                "docId", request.getDocuments().getDoc3Id(),
+                "childBusinessKey", caseId + "-DOC3"
+        ));
+
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("docs", docs);
+
+        // businessKey = caseId
+        ProcessInstance parent = runtimeService.startProcessInstanceByKey(
+                "DEBT_PROCESS",
+                request.getCaseId(),
+                vars
+        );
+
+        // query child processes (do callActivity tạo ra)
+        var children = runtimeService.createProcessInstanceQuery()
+                .superProcessInstanceId(parent.getId())
+                .list();
+
+        StartProcessResponse resp = new StartProcessResponse();
+        resp.setCaseId(request.getCaseId());
+        resp.setParentProcessInstanceId(parent.getId());
+        resp.setParentBusinessKey(parent.getBusinessKey());
+
+        resp.setChildren(
+                children.stream()
+                        .map(pi -> new StartProcessResponse.Child(pi.getId(), pi.getBusinessKey()))
+                        .toList()
+        );
+
+        return resp;
+    }
 }
