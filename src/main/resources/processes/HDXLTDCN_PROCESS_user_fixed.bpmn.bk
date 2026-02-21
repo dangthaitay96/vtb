@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+  id="Definitions_HDXLTDCN"
+  targetNamespace="http://bpmn.io/schema/bpmn"
+  exporter="Camunda Modeler"
+  exporterVersion="5.43.1"
+  modeler:executionPlatform="Camunda Platform"
+  modeler:executionPlatformVersion="7.24.0">
+
+  <bpmn:process id="HDXLTDCN_PROCESS" name="HDXLTDCN_PROCESS" isExecutable="true" camunda:historyTimeToLive="180">
+
+    <bpmn:startEvent id="StartEvent_1" name="START">
+      <bpmn:outgoing>Flow_start_to_init</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- This process instance handles ONE document (docId/docType/etc.) per process instance -->
+    <bpmn:userTask id="Task_Init" name="Khởi tạo hồ sơ">
+      <bpmn:extensionElements>
+        <!-- optional: expose variables in Tasklist -->
+        <camunda:formData>
+          <camunda:formField id="docId" label="Document Id" type="string" />
+          <camunda:formField id="docType" label="Document Type" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_start_to_init</bpmn:incoming>
+      <bpmn:incoming>Flow_reject</bpmn:incoming>
+      <bpmn:outgoing>Flow_init_to_review</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Review" name="Rà soát">
+      <bpmn:incoming>Flow_init_to_review</bpmn:incoming>
+      <bpmn:outgoing>Flow_review_to_sign</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Sign" name="Duyệt ký số">
+      <bpmn:extensionElements>
+        <!-- IMPORTANT: make the approval flag BOOLEAN to avoid 'String not Boolean' condition errors -->
+        <camunda:formData>
+          <camunda:formField id="approved" label="Approved?" type="boolean" defaultValue="false"/>
+          <camunda:formField id="rejectReason" label="Reject reason" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_review_to_sign</bpmn:incoming>
+      <bpmn:outgoing>Flow_sign_to_decide</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Decide" name="Approved?">
+      <bpmn:incoming>Flow_sign_to_decide</bpmn:incoming>
+      <bpmn:outgoing>Flow_approved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="EndEvent_Done" name="DONE">
+      <bpmn:incoming>Flow_approved</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Rejected -> loop back to Init -->
+    <bpmn:sequenceFlow id="Flow_reject" sourceRef="Gateway_Decide" targetRef="Task_Init">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression"><![CDATA[${approved == false}]]></bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_approved" sourceRef="Gateway_Decide" targetRef="EndEvent_Done">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression"><![CDATA[${approved == true}]]></bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_start_to_init" sourceRef="StartEvent_1" targetRef="Task_Init"/>
+    <bpmn:sequenceFlow id="Flow_init_to_review" sourceRef="Task_Init" targetRef="Task_Review"/>
+    <bpmn:sequenceFlow id="Flow_review_to_sign" sourceRef="Task_Review" targetRef="Task_Sign"/>
+    <bpmn:sequenceFlow id="Flow_sign_to_decide" sourceRef="Task_Sign" targetRef="Gateway_Decide"/>
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="HDXLTDCN_PROCESS">
+
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="182" y="162" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Init_di" bpmnElement="Task_Init">
+        <dc:Bounds x="260" y="140" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Review_di" bpmnElement="Task_Review">
+        <dc:Bounds x="440" y="140" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Sign_di" bpmnElement="Task_Sign">
+        <dc:Bounds x="620" y="140" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_Decide_di" bpmnElement="Gateway_Decide" isMarkerVisible="true">
+        <dc:Bounds x="810" y="155" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_Done_di" bpmnElement="EndEvent_Done">
+        <dc:Bounds x="930" y="162" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_start_to_init_di" bpmnElement="Flow_start_to_init">
+        <di:waypoint x="218" y="180"/>
+        <di:waypoint x="260" y="180"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_init_to_review_di" bpmnElement="Flow_init_to_review">
+        <di:waypoint x="400" y="180"/>
+        <di:waypoint x="440" y="180"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_review_to_sign_di" bpmnElement="Flow_review_to_sign">
+        <di:waypoint x="580" y="180"/>
+        <di:waypoint x="620" y="180"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_sign_to_decide_di" bpmnElement="Flow_sign_to_decide">
+        <di:waypoint x="760" y="180"/>
+        <di:waypoint x="810" y="180"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_approved_di" bpmnElement="Flow_approved">
+        <di:waypoint x="860" y="180"/>
+        <di:waypoint x="930" y="180"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_reject_di" bpmnElement="Flow_reject">
+        <di:waypoint x="835" y="155"/>
+        <di:waypoint x="835" y="100"/>
+        <di:waypoint x="330" y="100"/>
+        <di:waypoint x="330" y="140"/>
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>
