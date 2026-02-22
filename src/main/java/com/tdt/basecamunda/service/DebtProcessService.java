@@ -2,8 +2,11 @@ package com.tdt.basecamunda.service;
 
 import com.tdt.basecamunda.dto.StartProcessRequest;
 import com.tdt.basecamunda.dto.StartProcessResponse;
+import com.tdt.basecamunda.dto.TaskDto;
 import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
+import org.camunda.bpm.engine.task.Task;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,43 +19,15 @@ import java.util.Map;
 public class DebtProcessService {
 
     private final RuntimeService runtimeService;
+    private final TaskService taskService;
 
-    public DebtProcessService(RuntimeService runtimeService) {
+    public DebtProcessService(RuntimeService runtimeService, TaskService taskService) {
         this.runtimeService = runtimeService;
-    }
-
-    public String startProcess(StartProcessRequest request) {
-
-        Map<String, Object> variables = new HashMap<>();
-
-        // id tài liệu
-        variables.put("doc1Id", request.getDocuments().getDoc1Id());
-        variables.put("doc2Id", request.getDocuments().getDoc2Id());
-        variables.put("doc3Id", request.getDocuments().getDoc3Id());
-
-        // trạng thái duyệt (BẮT BUỘC phải Boolean)
-        variables.put("doc1Approved", false);
-        variables.put("doc2Approved", false);
-        variables.put("doc3Approved", false);
-
-        // trạng thái ký số
-        variables.put("doc1Signed", false);
-        variables.put("doc2Signed", false);
-        variables.put("doc3Signed", false);
-
-        ProcessInstance instance =
-                runtimeService.startProcessInstanceByKey(
-                        "DEBT_PROCESS",
-                        request.getCaseId(),   // business key
-                        variables
-                );
-
-        return instance.getProcessInstanceId();
+        this.taskService = taskService;
     }
 
     public StartProcessResponse startDebtProcess(StartProcessRequest request) {
         String caseId = request.getCaseId();
-
         List<Map<String, Object>> docs = new ArrayList<>();
         docs.add(Map.of(
                 "docNo", "DOC1",
@@ -69,33 +44,119 @@ public class DebtProcessService {
                 "docId", request.getDocuments().getDoc3Id(),
                 "childBusinessKey", caseId + "-DOC3"
         ));
-
         Map<String, Object> vars = new HashMap<>();
         vars.put("docs", docs);
-
-        // businessKey = caseId
         ProcessInstance parent = runtimeService.startProcessInstanceByKey(
                 "DEBT_PROCESS",
                 request.getCaseId(),
                 vars
         );
-
-        // query child processes (do callActivity tạo ra)
         var children = runtimeService.createProcessInstanceQuery()
                 .superProcessInstanceId(parent.getId())
                 .list();
-
         StartProcessResponse resp = new StartProcessResponse();
         resp.setCaseId(request.getCaseId());
         resp.setParentProcessInstanceId(parent.getId());
         resp.setParentBusinessKey(parent.getBusinessKey());
-
         resp.setChildren(
                 children.stream()
                         .map(pi -> new StartProcessResponse.Child(pi.getId(), pi.getBusinessKey()))
                         .toList()
         );
-
         return resp;
+    }
+
+    /**
+     * Complete task active hiện tại theo businessKey.
+     * Nếu có >1 task active -> throw để m khỏi complete nhầm.
+     */
+    public void completeCurrentTaskByBusinessKey(String businessKey, Map<String, Object> vars) {
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceBusinessKey(businessKey)
+                .active()
+                .orderByTaskCreateTime()
+                .asc()
+                .list();
+
+        if (tasks.isEmpty()) {
+            throw new IllegalStateException("No active task for businessKey=" + businessKey);
+        }
+        if (tasks.size() > 1) {
+            throw new IllegalStateException("More than 1 active task for businessKey=" + businessKey
+                    + ". Please complete by taskId to avoid wrong completion.");
+        }
+
+        taskService.complete(tasks.get(0).getId(), vars);
+    }
+
+    /**
+     * Lấy list task active theo businessKey (vd 001-DOC1)
+     */
+    public List<TaskDto> getActiveTasksByBusinessKey(String businessKey) {
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceBusinessKey(businessKey)
+                .active()
+                .orderByTaskCreateTime()
+                .asc()
+                .list();
+
+        return tasks.stream()
+                .map(t -> new TaskDto(
+                        t.getId(),
+                        t.getName(),
+                        t.getAssignee(),
+                        t.getProcessInstanceId(),
+                        t.getProcessDefinitionId(),
+                        t.getTaskDefinitionKey(),
+                        t.getCreateTime() == null ? null : t.getCreateTime().toInstant().toString()
+                ))
+                .toList();
+    }
+
+    /**
+     * Lấy 1 task detail theo taskId
+     */
+    public TaskDto getTaskById(String taskId) {
+        Task t = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (t == null) throw new IllegalStateException("Task not found: " + taskId);
+
+        return new TaskDto(
+                t.getId(),
+                t.getName(),
+                t.getAssignee(),
+                t.getProcessInstanceId(),
+                t.getProcessDefinitionId(),
+                t.getTaskDefinitionKey(),
+                t.getCreateTime() == null ? null : t.getCreateTime().toInstant().toString()
+        );
+    }
+
+    /**
+     * Complete theo taskId (best safe)
+     */
+    public void completeTaskById(String taskId, Map<String, Object> vars) {
+        Task t = taskService.createTaskQuery().taskId(taskId).active().singleResult();
+        if (t == null) throw new IllegalStateException("Active task not found: " + taskId);
+        taskService.complete(taskId, vars);
+    }
+
+    /**
+     * lấy processInstanceId theo businessKey
+     */
+    public String getProcessInstanceIdByBusinessKey(String businessKey) {
+        ProcessInstance pi = runtimeService.createProcessInstanceQuery()
+                .processInstanceBusinessKey(businessKey)
+                .active()
+                .singleResult();
+        if (pi == null) throw new IllegalStateException("ProcessInstance not found for businessKey=" + businessKey);
+        return pi.getId();
+    }
+
+    /**
+     * xem variables của process instance theo businessKey
+     */
+    public Map<String, Object> getVariablesByBusinessKey(String businessKey) {
+        String piId = getProcessInstanceIdByBusinessKey(businessKey);
+        return runtimeService.getVariables(piId);
     }
 }
