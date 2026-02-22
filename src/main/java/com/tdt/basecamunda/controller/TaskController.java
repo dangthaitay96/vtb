@@ -19,7 +19,7 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}")
-    public ResponseEntity<TaskDto> getTask(@PathVariable String taskId) {
+    public ResponseEntity<TaskDto> getTask(@PathVariable("taskId") String taskId) {
         return ResponseEntity.ok(debtProcessService.getTaskById(taskId));
     }
 

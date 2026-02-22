@@ -46,7 +46,7 @@ public class DebtProcessController {
         return ResponseEntity.ok(Map.of("businessKey", businessKey, "status", "COMPLETED"));
     }
 
-    /** BONUS: xem variables của process instance theo businessKey */
+    /**  xem variables của process instance theo businessKey */
     @GetMapping("/{businessKey}/variables")
     public ResponseEntity<Map<String, Object>> getVars(@PathVariable String businessKey) {
         return ResponseEntity.ok(debtProcessService.getVariablesByBusinessKey(businessKey));
