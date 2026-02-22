@@ -26,36 +26,76 @@ public class DebtProcessService {
         this.taskService = taskService;
     }
 
+//    public StartProcessResponse startDebtProcess(StartProcessRequest request) {
+//        String caseId = request.getCaseId();
+//        String solutionType = request.getSolutionType();
+//        List<Map<String, Object>> docs = new ArrayList<>();
+//        docs.add(Map.of(
+//                "docNo", "DOC1",
+//                "docId", request.getDocuments().getDoc1Id(),
+//                "childBusinessKey", caseId + "-DOC1"
+//        ));
+//        docs.add(Map.of(
+//                "docNo", "DOC2",
+//                "docId", request.getDocuments().getDoc2Id(),
+//                "childBusinessKey", caseId + "-DOC2"
+//        ));
+//        docs.add(Map.of(
+//                "docNo", "DOC3",
+//                "docId", request.getDocuments().getDoc3Id(),
+//                "childBusinessKey", caseId + "-DOC3"
+//        ));
+//        Map<String, Object> vars = new HashMap<>();
+//        vars.put("docs", docs);
+//        ProcessInstance parent = runtimeService.startProcessInstanceByKey(
+//                "DEBT_PROCESS",
+//                request.getCaseId(),
+//                vars
+//        );
+//        var children = runtimeService.createProcessInstanceQuery()
+//                .superProcessInstanceId(parent.getId())
+//                .list();
+//        StartProcessResponse resp = new StartProcessResponse();
+//        resp.setCaseId(request.getCaseId());
+//        resp.setParentProcessInstanceId(parent.getId());
+//        resp.setParentBusinessKey(parent.getBusinessKey());
+//        resp.setChildren(
+//                children.stream()
+//                        .map(pi -> new StartProcessResponse.Child(pi.getId(), pi.getBusinessKey()))
+//                        .toList()
+//        );
+//        return resp;
+//    }
+
     public StartProcessResponse startDebtProcess(StartProcessRequest request) {
         String caseId = request.getCaseId();
-        List<Map<String, Object>> docs = new ArrayList<>();
-        docs.add(Map.of(
-                "docNo", "DOC1",
-                "docId", request.getDocuments().getDoc1Id(),
-                "childBusinessKey", caseId + "-DOC1"
-        ));
-        docs.add(Map.of(
-                "docNo", "DOC2",
-                "docId", request.getDocuments().getDoc2Id(),
-                "childBusinessKey", caseId + "-DOC2"
-        ));
-        docs.add(Map.of(
-                "docNo", "DOC3",
-                "docId", request.getDocuments().getDoc3Id(),
-                "childBusinessKey", caseId + "-DOC3"
-        ));
+        String solutionType = request.getSolutionType(); // "HDXLTDCN" | "GIAM_DOC"
+
         Map<String, Object> vars = new HashMap<>();
-        vars.put("docs", docs);
+        vars.put("solutionType", solutionType);
+
+        // map variables đúng tên BPMN đang dùng
+        if (request.getDocuments() != null) {
+            vars.put("doc1Id", request.getDocuments().getDoc1Id());
+            vars.put("doc2Id", request.getDocuments().getDoc2Id());
+            vars.put("doc3Id", request.getDocuments().getDoc3Id());
+            vars.put("doc6Id", request.getDocuments().getDoc6Id());
+        }
+
+        // start parent: businessKey = caseId
         ProcessInstance parent = runtimeService.startProcessInstanceByKey(
                 "DEBT_PROCESS",
-                request.getCaseId(),
+                caseId,
                 vars
         );
+
+        // tìm tất cả child instances được tạo bởi callActivity
         var children = runtimeService.createProcessInstanceQuery()
                 .superProcessInstanceId(parent.getId())
                 .list();
+
         StartProcessResponse resp = new StartProcessResponse();
-        resp.setCaseId(request.getCaseId());
+        resp.setCaseId(caseId);
         resp.setParentProcessInstanceId(parent.getId());
         resp.setParentBusinessKey(parent.getBusinessKey());
         resp.setChildren(
@@ -111,6 +151,30 @@ public class DebtProcessService {
                         t.getCreateTime() == null ? null : t.getCreateTime().toInstant().toString()
                 ))
                 .toList();
+    }
+
+    public List<TaskDto> getActiveTasksByCaseId(String caseId) {
+        var parent = runtimeService.createProcessInstanceQuery()
+                .processDefinitionKey("DEBT_PROCESS")
+                .processInstanceBusinessKey(caseId)
+                .singleResult();
+
+        if (parent == null) return List.of();
+
+        var childInstances = runtimeService.createProcessInstanceQuery()
+                .superProcessInstanceId(parent.getId())
+                .list();
+
+        if (childInstances.isEmpty()) return List.of();
+
+        var childIds = childInstances.stream().map(ProcessInstance::getId).toList();
+
+        var tasks = taskService.createTaskQuery()
+                .processInstanceIdIn(childIds.toArray(String[]::new))
+                .active()
+                .list();
+
+        return tasks.stream().map(TaskDto::from).toList();
     }
 
     /**

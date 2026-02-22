@@ -5,6 +5,7 @@ public class Documents {
     private String doc1Id;
     private String doc2Id;
     private String doc3Id;
+    private String doc6Id;
 
     public String getDoc1Id() {
         return doc1Id;
@@ -28,5 +29,13 @@ public class Documents {
 
     public void setDoc3Id(String doc3Id) {
         this.doc3Id = doc3Id;
+    }
+
+    public String getDoc6Id() {
+        return doc6Id;
+    }
+
+    public void setDoc6Id(String doc6Id) {
+        this.doc6Id = doc6Id;
     }
 }

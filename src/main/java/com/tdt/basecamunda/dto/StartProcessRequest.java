@@ -3,6 +3,7 @@ package com.tdt.basecamunda.dto;
 public class StartProcessRequest {
 
     private String caseId;
+    private String solutionType;
     private Documents documents;
 
     public String getCaseId() {
@@ -19,5 +20,13 @@ public class StartProcessRequest {
 
     public void setDocuments(Documents documents) {
         this.documents = documents;
+    }
+
+    public String getSolutionType() {
+        return solutionType;
+    }
+
+    public void setSolutionType(String solutionType) {
+        this.solutionType = solutionType;
     }
 }

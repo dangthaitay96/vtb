@@ -1,5 +1,7 @@
 package com.tdt.basecamunda.dto;
 
+import org.camunda.bpm.engine.task.Task;
+
 public class TaskDto {
     private String id;
     private String name;
@@ -21,6 +23,24 @@ public class TaskDto {
         this.processDefinitionId = processDefinitionId;
         this.taskDefinitionKey = taskDefinitionKey;
         this.created = created;
+    }
+
+    public static TaskDto from(Task task) {
+        if (task == null) return null;
+
+        TaskDto dto = new TaskDto();
+        dto.setId(task.getId());
+        dto.setName(task.getName());
+        dto.setAssignee(task.getAssignee());
+
+        dto.setTaskDefinitionKey(task.getTaskDefinitionKey());
+
+        dto.setProcessInstanceId(task.getProcessInstanceId());
+
+        dto.setProcessDefinitionId(task.getProcessDefinitionId());
+
+
+        return dto;
     }
 
     public String getId() {

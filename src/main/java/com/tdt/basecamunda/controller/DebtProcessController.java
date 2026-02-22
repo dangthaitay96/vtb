@@ -26,8 +26,13 @@ public class DebtProcessController {
 
     /** GET: list task active theo businessKey (vd 001-DOC1) */
     @GetMapping("/{businessKey}/tasks")
-    public ResponseEntity<List<TaskDto>> getTasks(@PathVariable String businessKey) {
+    public ResponseEntity<List<TaskDto>> getTasks(@PathVariable("businessKey") String businessKey) {
         return ResponseEntity.ok(debtProcessService.getActiveTasksByBusinessKey(businessKey));
+    }
+
+    @GetMapping("/{caseId}/tasks/all")
+    public ResponseEntity<List<TaskDto>> getAllTasks(@PathVariable("caseId") String caseId) {
+        return ResponseEntity.ok(debtProcessService.getActiveTasksByCaseId(caseId));
     }
 
     /** POST: complete task active hiện tại theo businessKey */
